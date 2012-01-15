@@ -13,7 +13,7 @@ require 'active_support/core_ext/module'
 module Momentarily
 	mattr_accessor :timeout, :debug
 	@@timeout = 60
-	@@debug = true
+	@@debug = false
 
 	def Momentarily.start
 		# faciliates debugging
