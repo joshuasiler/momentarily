@@ -1,1 +1,43 @@
-A rails gem that allows you to briefly defer execution of tasks and return from requests faster.
+Momentarily was created to allow Rails developers to speed up their applications for end users.  Momentarily gives developers the ability to quickly and safely move slow operations into a thread and out of the request chain so user experience is not impacted by operations like sending emails, updating web services or database operations.
+
+Momentarily is a wrapper around EventMachine with Rails considerations baked in. EventMachine offers both an evented-model reactor designed for asychronous IO, and a thread-pool manager and processing queue for blocking IO. Momentarily provides the code to integrate EventMachine with Passenger, Thin or other web server environments, and then use the thread-pool manager in a Rails-safe manner.
+
+Contributions are welcome!
+
+To use Momentarily, first add it to your Gemfile:
+
+gem 'momentarily'
+
+Then, add a momentarily.rb file to config/initializers. When starting Momentarily up, you have the option of inserting any setup code you'd like run in your reactor thread. For example, we use AMQP, so our initialization looks like this:
+
+require 'amqp'
+
+Momentarily.start( Proc.new { 
+	AMQP.channel ||= AMQP::Channel.new(AMQP.connect(:host=> Q_SERVER, :user=> Q_USER, :pass => Q_PASS, :vhost => Q_VHOST )) 
+	} )
+
+Be careful that your initilization Proc doesn't block or run forever. Momentarily starts EventMachine behind the scenes, and the reactor will not start until your Proc is completed. Once complete, EM.reactor_running? should be true. 
+
+Momentarily provides the very useful "later" command. Calling .later will spawn a thread to complete the tasks you provide, allowing your Rails requests to complete and return to users. For example:
+
+def my_rails_action
+	# do something that has to be done inline
+	Momentarily.later( Proc.new{
+		# stuff you don't need done before you return ot the users, and might take awhile
+		# update databases using ActiveRecord
+		# send emails with ActionMailer
+		# other stuff
+	})
+	render
+end
+
+Momentary will then use a Thread to complete your activity, rather than having your users wait. 
+
+Momentarily bridges the gap between using non-blocking IO for asynch operations (like EventMachine) and industrial strength queueing (like RabbitMQ and AMQP) to offload work for later execution. Both have their places, but it's not always feasible to use only non-blocking IO, and it's often not worth the trouble to create messages and a consumer just to shave 500ms off a web request. Our goal is to make it simple to defer even small tasks and ensure a snappy end user experience.
+
+Other notes:
+
+By default, EventMachine maintains a pool of 20 available threads. You may have to tune this to your processing environment.
+
+Similarly, ActiveRecord keeps a pool of connections available, and the default is too low - each thread explicitly claims (then releases) one of these connections while working. You can add "pool: 30" or similar to your database.yml file to increase it. Again, you'll have to tune this number to your processing environment.
+
