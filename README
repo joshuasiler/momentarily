@@ -1,0 +1,1 @@
+A rails gem that allows you to briefly defer execution of tasks and return from requests faster.
