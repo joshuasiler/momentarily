@@ -1,3 +1,5 @@
+h1. Introducing Momentarily
+
 Momentarily was created to allow Rails developers to speed up their applications for end users.  Momentarily gives developers the ability to quickly and safely move slow operations into a thread and out of the request chain so user experience is not impacted by operations like sending emails, updating web services or database operations.
 
 Momentarily is a wrapper around EventMachine with Rails considerations baked in. EventMachine offers both an evented-model reactor designed for asychronous IO, and a thread-pool manager and processing queue for blocking IO. Momentarily provides the code to integrate EventMachine with Passenger, Thin, Rails Console or other environments, and then use the thread-pool manager in a Rails-safe manner.
@@ -8,7 +10,7 @@ To use Momentarily, first add it to your Gemfile:
 
 gem 'momentarily'
 
-You'll then need to start the reactor. Create a config/initializers/momentarily.rb file like this:
+You'll then need to start the reactor. Create a *config/initializers/momentarily.rb* file like this:
 
 Momentarily.start
 
@@ -31,12 +33,11 @@ Momentary will then use a thread to complete your activity, rather than having y
 
 Momentarily.later does the following: 
 
-- Checks out (and returns) a connection from the ActiveRecord connection pool
-- Catches any exceptions
-- Automatically expires any work that fails to return within the default timeout. This is designed to avoid hung threads and eventual thread pool starvation. You can change the default of 60 seconds by setting Momentarily.timeout with a new value.
+* Checks out (and returns) a connection from the ActiveRecord connection pool
+* Catches any exceptions
+* Automatically expires any work that fails to return within the default timeout. This is designed to avoid hung threads and eventual thread pool starvation. You can change the default of 60 seconds by setting Momentarily.timeout with a new value.
 
-
-For consistency, Momentarily also provide interfaces EventMachine.next_tick and EventMachine.defer as Momentarily.next_tick and Momentarily.defer. Use next_tick to schedule non-blocking IO operations, like AMQP calls or Pusher notifications. Momentarily.defer operates similarly to Momentarily.later, except Momentarily.later checks out an ActiveRecord connection, manages timeouts and handles exceptions for better safety in a Rails environment.  We use AMQP also, so our momentarily.rb initializer looks like this:
+For consistency, Momentarily also provide interfaces *EventMachine.next_tick* and *EventMachine.defer* as *Momentarily.next_tick* and *Momentarily.defer*. Use next_tick to schedule non-blocking IO operations, like AMQP calls or Pusher notifications. *Momentarily.defer* operates similarly to *Momentarily.later*, except *Momentarily.later* checks out an ActiveRecord connection, manages timeouts and handles exceptions for better safety in a Rails environment.  We use AMQP also, so our momentarily.rb initializer looks like this:
 
 require 'amqp'
 
@@ -49,7 +50,7 @@ Momentarily.next_tick( Proc.new {
 
 Momentarily bridges the gap between using non-blocking IO for asynch operations (like EventMachine) and industrial strength queueing (like RabbitMQ and AMQP) to offload work for later execution. Both have their places, but it's not always feasible to use only non-blocking IO, and it's often not worth the trouble to create messages and a consumer just to shave 500ms off a web request. Our goal is to make it simple to defer even small tasks and ensure a snappy end user experience.
 
-Other notes:
+h2. Other notes:
 
 You can enable debug mode by setting Momentarily.debug = true. Momentarily will then put messages to the console about operation and halt if an unhandled exception occurs. 
 
