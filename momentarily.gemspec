@@ -20,4 +20,6 @@ Gem::Specification.new do |s|
   # specify any dependencies here; for example:
   s.add_development_dependency "thin"
   s.add_runtime_dependency "eventmachine"
+  s.add_runtime_dependency "activerecord"
+  s.add_runtime_dependency "activesupport"
 end

@@ -1,6 +1,6 @@
 Momentarily was created to allow Rails developers to speed up their applications for end users.  Momentarily gives developers the ability to quickly and safely move slow operations into a thread and out of the request chain so user experience is not impacted by operations like sending emails, updating web services or database operations.
 
-Momentarily is a wrapper around EventMachine with Rails considerations baked in. EventMachine offers both an evented-model reactor designed for asychronous IO, and a thread-pool manager and processing queue for blocking IO. Momentarily provides the code to integrate EventMachine with Passenger, Thin or other web server environments, and then use the thread-pool manager in a Rails-safe manner.
+Momentarily is a wrapper around EventMachine with Rails considerations baked in. EventMachine offers both an evented-model reactor designed for asychronous IO, and a thread-pool manager and processing queue for blocking IO. Momentarily provides the code to integrate EventMachine with Passenger, Thin, Rails Console or other environments, and then use the thread-pool manager in a Rails-safe manner.
 
 Contributions are welcome!
 
@@ -8,15 +8,11 @@ To use Momentarily, first add it to your Gemfile:
 
 gem 'momentarily'
 
-Then, add a momentarily.rb file to config/initializers. When starting Momentarily up, you have the option of inserting any setup code you'd like run in your reactor thread. For example, we use AMQP, so our initialization looks like this:
+You'll then need to start the reactor. Create a config/initializers/momentarily.rb file like this:
 
-require 'amqp'
+Momentarily.start
 
-Momentarily.start( Proc.new { 
-	AMQP.channel ||= AMQP::Channel.new(AMQP.connect(:host=> Q_SERVER, :user=> Q_USER, :pass => Q_PASS, :vhost => Q_VHOST )) 
-	} )
-
-Be careful that your initilization Proc doesn't block or run forever. Momentarily starts EventMachine behind the scenes, and the reactor will not start until your Proc is completed. Once complete, EM.reactor_running? should be true. 
+That's it! Once complete, Momentarily.reactor_running? should be true. 
 
 Momentarily provides the very useful "later" command. Calling .later will spawn a thread to complete the tasks you provide, allowing your Rails requests to complete and return to users. For example:
 
@@ -31,13 +27,34 @@ def my_rails_action
 	render
 end
 
-Momentary will then use a Thread to complete your activity, rather than having your users wait. 
+Momentary will then use a thread to complete your activity, rather than having your users wait. Note that you are responsible for ensuring that you provided Proc is thread safe. 
+
+Momentarily.later does the following: 
+
+- Checks out (and returns) a connection from the ActiveRecord connection pool
+- Catches any exceptions
+- Automatically expires any work that fails to return within the default timeout. This is designed to avoid hung threads and eventual thread pool starvation. You can change the default of 60 seconds by setting Momentarily.timeout with a new value.
+
+
+For consistency, Momentarily also provide interfaces EventMachine.next_tick and EventMachine.defer as Momentarily.next_tick and Momentarily.defer. Use next_tick to schedule non-blocking IO operations, like AMQP calls or Pusher notifications. Momentarily.defer operates similarly to Momentarily.later, except Momentarily.later checks out an ActiveRecord connection, manages timeouts and handles exceptions for better safety in a Rails environment.  We use AMQP also, so our momentarily.rb initializer looks like this:
+
+require 'amqp'
+
+Momentarily.start
+
+Momentarily.next_tick( Proc.new { 
+	AMQP.channel ||= AMQP::Channel.new(AMQP.connect(:host=> Q_SERVER, :user=> Q_USER, :pass => Q_PASS, :vhost => Q_VHOST )) 
+	} )
+
 
 Momentarily bridges the gap between using non-blocking IO for asynch operations (like EventMachine) and industrial strength queueing (like RabbitMQ and AMQP) to offload work for later execution. Both have their places, but it's not always feasible to use only non-blocking IO, and it's often not worth the trouble to create messages and a consumer just to shave 500ms off a web request. Our goal is to make it simple to defer even small tasks and ensure a snappy end user experience.
 
 Other notes:
 
+You can enable debug mode by setting Momentarily.debug = true. Momentarily will then put messages to the console about operation and halt if an unhandled exception occurs. 
+
 By default, EventMachine maintains a pool of 20 available threads. You may have to tune this to your processing environment.
 
-Similarly, ActiveRecord keeps a pool of connections available, and the default is too low - each thread explicitly claims (then releases) one of these connections while working. You can add "pool: 30" or similar to your database.yml file to increase it. Again, you'll have to tune this number to your processing environment.
+Similarly, ActiveRecord keeps a pool of connections available, and the default is too low here - each thread explicitly claims (then releases) one of these connections while working. You can add "pool: 30" or similar to your database.yml file to increase it. Again, you'll have to tune this number to your processing environment.
 
+On running Momentarily with thin. Momentarily detects the Thin object in the environment and skips startup of the EventMachine reactor in that case (preferring to wait for Thin to do it.) If for whatever reason you have Thin defined in your gemfile, but aren't using it as an active server, Momentarily will not start EM as intended. To make sure your tests work, make sure your thin dependency is defined in the  production and/or development group in your Gemfile so it is not loaded when tests are run.

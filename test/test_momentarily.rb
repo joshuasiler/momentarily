@@ -1,60 +1,62 @@
 require 'test/unit'
-require './lib/momentarily/version.rb'
 require './lib/momentarily.rb'
 
-# ActiveRecord::Base.establish_connection(YAML::load(File.read(File.dirname(__FILE__) + '/../config/database.yml')))
+ActiveRecord::Base.establish_connection(YAML::load(File.read(File.dirname(__FILE__) + '/../config/database.yml')))
 
 class TestMomentarily < Test::Unit::TestCase
-	
-  def teardown
-  	Object.send(:remove_const, :Thin) if defined?(Thin)
-	EM.stop if EM.reactor_running?
-	sleep(0.5)
-	assert(!EM.reactor_running?)
-  end
-  
-  def test_instantiation
-	Momentarily.start()
-	assert(EM.reactor_running?)
-  end
+	def setup
+	    if !ActiveRecord::Base.connection.table_exists?('momentarily_test')
+			puts "Creating test table..."
+			AddEntitiesTable.create
+		end
+		# debug on will cause test to halt on an exception
+		Momentarily.debug = true
+		if !Momentarily.reactor_running?
+			Momentarily.start
+		end
+	end
 
-  def test_instantiation_good_proc
-  	a = 1
-	Momentarily.start( Proc.new { a = 2 } )
-	sleep(0.5)
-	assert(EM.reactor_running?)
-	assert(a == 2)
-  end
+	def test_instantiation
+		assert(EM.reactor_running?)
+	end
 
-   def test_instantiation_bad_proc
-   	# this should be a bad statement that produces an exception, but doesn't stop the reactor
-	Momentarily.start( Proc.new { asdfputs "I am a bad proc"} )
-	assert(EM.reactor_running?)
-  end
+	def test_later
+		a = 1
+		Momentarily.later( Proc.new { a = 2 } )
+		sleep(0.5)
+		assert(a == 2)
 
-   def test_instantiation_thin
-   	simulate_thin()
-	Momentarily.start()
-	assert(EM.reactor_running?)
-  end
+		Momentarily.later( Proc.new { asdfputs "I am a bad proc" } )
+		assert(EM.reactor_running?)
 
-  def test_instantiation_good_proc_thin
-  	simulate_thin()
-  	a = 1
-	Momentarily.start( Proc.new { a = 2 } )
-	sleep(0.5)
-	assert(EM.reactor_running?)
-	assert(a == 2)
-  end
+		a = 1
+		Momentarily.timeout = 1
+		Momentarily.later( Proc.new { 
+			sleep(2)
+			a = 2	 } )
+		sleep(3)
+		assert(a == 1)
 
-   def test_instantiation_bad_proc_thin
-   	simulate_thin()
-	Momentarily.start( Proc.new { asdfputs "I am a bad proc"} )
-	assert(EM.reactor_running?)
-  end
+	end
 
-  def simulate_thin()
-  	require 'thin'
-  	Thread.new { EM.run }
-  end
+	def simulate_thin()
+		require 'thin'
+		Thread.new { EM.run }
+	end
 end
+
+  class AddEntitiesTable < ActiveRecord::Migration
+		# up and down functions call broken code in Rail3 migrations gem, called it 'create'
+
+    def self.create
+      create_table "momentarily_test", :force => true do |t|
+				t.string   "key",        :limit => 512, :null => false
+				t.string     "value"
+				t.datetime "created_at"
+				t.datetime "updated_at"
+      end
+
+      add_index "momentarily_test", ["key"], :name => "key"
+    end
+
+  end
