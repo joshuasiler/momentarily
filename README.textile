@@ -1,10 +1,10 @@
 h1. Introducing Momentarily
 
-Momentarily was created to allow Rails developers to speed up their applications for end users.  Momentarily gives developers the ability to quickly and safely move slow operations into a thread and out of the request chain so user experience is not impacted by operations like sending emails, updating web services or database operations.
+Momentarily was created to allow Rails developers to *speed up their applications for end users*.  Momentarily gives developers the ability to quickly and safely *move slow operations into a thread and out of the request chain* so user experience is not impacted by operations like sending emails, updating web services or database operations.
 
 Momentarily is a wrapper around EventMachine with Rails considerations baked in. EventMachine offers both an evented-model reactor designed for asychronous IO, and a thread-pool manager and processing queue for blocking IO. Momentarily provides the code to integrate EventMachine with Passenger, Thin, Rails Console or other environments, and then use the thread-pool manager in a Rails-safe manner.
 
-Contributions are welcome!
+*Contributions are welcome!*
 
 To use Momentarily, first add it to your Gemfile:
 
@@ -14,7 +14,7 @@ You'll then need to start the reactor. Create a *config/initializers/momentarily
 
 Momentarily.start
 
-That's it! Once complete, Momentarily.reactor_running? should be true. 
+That's it! Once complete, *Momentarily.reactor_running?* should be true. 
 
 Momentarily provides the very useful "later" command. Calling .later will spawn a thread to complete the tasks you provide, allowing your Rails requests to complete and return to users. For example:
 
@@ -52,10 +52,10 @@ Momentarily bridges the gap between using non-blocking IO for asynch operations 
 
 h2. Other notes:
 
-You can enable debug mode by setting Momentarily.debug = true. Momentarily will then put messages to the console about operation and halt if an unhandled exception occurs. 
+You can enable debug mode by setting *Momentarily.debug = true*. Momentarily will then put messages to the console about operation and halt if an unhandled exception occurs. 
 
 By default, EventMachine maintains a pool of 20 available threads. You may have to tune this to your processing environment.
 
-Similarly, ActiveRecord keeps a pool of connections available, and the default is too low here - each thread explicitly claims (then releases) one of these connections while working. You can add "pool: 30" or similar to your database.yml file to increase it. Again, you'll have to tune this number to your processing environment.
+Similarly, ActiveRecord keeps a pool of connections available, and *the default is too low* - each thread explicitly claims (then releases) one of these connections while working. You can add "pool: 30" or similar to your database.yml file to increase it. Again, you'll have to tune this number to your processing environment.
 
-On running Momentarily with thin. Momentarily detects the Thin object in the environment and skips startup of the EventMachine reactor in that case (preferring to wait for Thin to do it.) If for whatever reason you have Thin defined in your gemfile, but aren't using it as an active server, Momentarily will not start EM as intended. To make sure your tests work, make sure your thin dependency is defined in the  production and/or development group in your Gemfile so it is not loaded when tests are run.
+*On running Momentarily with Thin*. Momentarily detects the Thin object in the environment and skips startup of the EventMachine reactor in that case (preferring to wait for Thin to do it.) If for whatever reason you have Thin defined in your gemfile, but aren't using it as an active server, Momentarily will not start EM as intended. To make sure your tests work, make sure your thin dependency is defined in the  production and/or development group in your Gemfile so it is not loaded when tests are run.
