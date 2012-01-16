@@ -9,8 +9,7 @@ class TestMomentarily < Test::Unit::TestCase
 			puts "Creating test table..."
 			AddEntitiesTable.create
 		end
-		# debug on will cause test to halt on an exception
-		Momentarily.debug = true
+		Momentarily.debug = false
 		if !Momentarily.reactor_running?
 			Momentarily.start
 		end
@@ -37,6 +36,35 @@ class TestMomentarily < Test::Unit::TestCase
 		sleep(3)
 		assert(a == 1)
 
+	end
+
+	def test_later_blocks
+		a = 1
+		Momentarily.later { a = 2 }
+		sleep(0.5)
+		assert(a == 2)
+
+		Momentarily.later { asdfputs "I am a bad proc" } 
+		assert(EM.reactor_running?)
+
+		a = 1
+		Momentarily.timeout = 1
+		Momentarily.later { 
+			sleep(2)
+			a = 2	 } 
+		sleep(3)
+		assert(a == 1)
+
+	end
+
+	def test_next_tick
+		a = 1
+		Momentarily.next_tick( Proc.new { a = 2 })
+		sleep(0.5)
+		assert(a == 2)
+		Momentarily.next_tick { a = 3 }
+		sleep(0.5)
+		assert(a == 3)
 	end
 
 	def simulate_thin()

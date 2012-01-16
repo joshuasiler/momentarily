@@ -49,16 +49,16 @@ module Momentarily
 		Signal.trap("TERM") { EM.stop }
 	end
 	
-	def Momentarily.later(work, callback = nil)
-		EM.defer( self.railsify(work), self.railsify(callback) )
+	def Momentarily.later(work = nil, callback = nil, &block)
+		EM.defer( self.railsify(( work || block )), self.railsify(callback) )
 	end
 
-	def Momentarily.next_tick(work)
-		EM.next_tick(work)
+	def Momentarily.next_tick(work = nil, &block)
+		EM.next_tick( ( work || block ) ) 
 	end
 
-	def Momentarily.defer(work, callback = nil)
-		EM.defer( work, callback)
+	def Momentarily.defer(work = nil, callback = nil, &block)
+		EM.defer( ( work || block ), callback)
 	end
 
 	def Momentarily.reactor_running?

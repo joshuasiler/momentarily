@@ -48,7 +48,6 @@ Momentarily.next_tick( Proc.new {
 	AMQP.channel ||= AMQP::Channel.new(AMQP.connect(:host=> Q_SERVER, :user=> Q_USER, :pass => Q_PASS, :vhost => Q_VHOST )) 
 	} )
 
-
 Momentarily bridges the gap between using non-blocking IO for asynch operations (like EventMachine) and industrial strength queueing (like RabbitMQ and AMQP) to offload work for later execution. Both have their places, but it's not always feasible to use only non-blocking IO, and it's often not worth the trouble to create messages and a consumer just to shave 500ms off a web request. Our goal is to make it simple to defer even small tasks and ensure a snappy end user experience.
 
 h2. Other notes:
