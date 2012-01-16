@@ -29,13 +29,14 @@ def my_rails_action
 	render
 end
 
-Momentary will then use a thread to complete your activity, rather than having your users wait. Note that you are responsible for ensuring that you provided Proc is thread safe. 
+This will allow your request to complete without waiting for your activities to complete. Note that you are responsible for ensuring that your provided Proc is thread safe. 
 
 Momentarily.later does the following: 
 
 * Checks out (and returns) a connection from the ActiveRecord connection pool
-* Catches any exceptions
-* Automatically expires any work that fails to return within the default timeout. This is designed to avoid hung threads and eventual thread pool starvation. You can change the default of 60 seconds by setting Momentarily.timeout with a new value.
+* Sends your request to EventMachine for scheduling
+* Catches and handles any general exceptions in the work thread for debugging
+* Automatically expires any work that fails to return within the default timeout. This is designed to avoid hung threads and eventual thread pool starvation. You can change the default of 60 seconds by setting *Momentarily.timeout* with a new value.
 
 For consistency, Momentarily also provide interfaces *EventMachine.next_tick* and *EventMachine.defer* as *Momentarily.next_tick* and *Momentarily.defer*. Use next_tick to schedule non-blocking IO operations, like AMQP calls or Pusher notifications. *Momentarily.defer* operates similarly to *Momentarily.later*, except *Momentarily.later* checks out an ActiveRecord connection, manages timeouts and handles exceptions for better safety in a Rails environment.  We use AMQP also, so our momentarily.rb initializer looks like this:
 
@@ -58,4 +59,4 @@ By default, EventMachine maintains a pool of 20 available threads. You may have 
 
 Similarly, ActiveRecord keeps a pool of connections available, and *the default is too low* - each thread explicitly claims (then releases) one of these connections while working. You can add "pool: 30" or similar to your database.yml file to increase it. Again, you'll have to tune this number to your processing environment.
 
-*On running Momentarily with Thin*. Momentarily detects the Thin object in the environment and skips startup of the EventMachine reactor in that case (preferring to wait for Thin to do it.) If for whatever reason you have Thin defined in your gemfile, but aren't using it as an active server, Momentarily will not start EM as intended. To make sure your tests work, make sure your thin dependency is defined in the  production and/or development group in your Gemfile so it is not loaded when tests are run.
+*On running Momentarily with Thin*. Momentarily detects the Thin object in the environment and skips startup of the EventMachine reactor in that case (preferring to wait for Thin to do it.) If for whatever reason you have Thin defined in your gemfile, but aren't using it as an active server, Momentarily will not start EM as intended (unless you are In the Rails console). To make sure your tests work, make sure your thin dependency is defined in the  production and/or development group in your Gemfile so it is not loaded when tests are run.
