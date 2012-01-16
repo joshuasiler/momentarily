@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
 
   s.rubyforge_project = "momentarily"
 
-  s.files         = ["lib/momentarily.rb", "lib/momentarily/version.rb","README"]
+  s.files         = ["lib/momentarily.rb", "lib/momentarily/version.rb","README.textile"]
   s.test_files    = ["test/test_momentarily.rb"]
 #  s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
