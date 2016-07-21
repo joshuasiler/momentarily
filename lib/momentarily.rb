@@ -11,7 +11,7 @@ require 'active_record'
 require 'active_support/core_ext/module'
 
 module Momentarily
-	mattr_accessor :timeout, :debug
+	mattr_accessor :timeout, :debug, :inline
 	@@timeout = 60
 	@@debug = false
 	@@inline = false
