@@ -16,6 +16,10 @@ You'll then need to start the reactor. Create a *config/initializers/momentarily
 
 <pre><code>
     Momentarily.start
+
+    # if classes aren't cached they will disappear from thread
+    # or we are testing for conditions, just run the code immediately
+    Momentarily.inline = true if Rails.env.development? || Rails.env.test? 
 </code></pre>
 
 That's it! Once complete, *Momentarily.reactor_running?* should be true. 

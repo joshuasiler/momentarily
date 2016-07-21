@@ -50,7 +50,7 @@ module Momentarily
 	end
 	
 	def Momentarily.later(work = nil, callback = nil, &block)
-		if Rails.env.test?
+		if @@inline
 			(work || block).call
 			callback.call unless callback.blank?
 		else
