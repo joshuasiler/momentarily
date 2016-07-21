@@ -24,8 +24,6 @@ You'll then need to start the reactor. Create a *config/initializers/momentarily
 
 That's it! Once complete, *Momentarily.reactor_running?* should be true. 
 
-Note that momentarily will not defer tasks if Rails.env.test? is true.
-
 Momentarily provides the very useful "later" command. Calling .later will spawn a thread to complete the tasks you provide, allowing your Rails requests to complete and return to users. For example:
 
 <pre><code>
