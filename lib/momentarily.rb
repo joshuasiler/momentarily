@@ -50,7 +50,12 @@ module Momentarily
 	end
 	
 	def Momentarily.later(work = nil, callback = nil, &block)
-		EM.defer( self.railsify(( work || block )), self.railsify(callback) )
+		if Rails.env.test?
+			(work || block).call
+			callback.call unless callback.blank?
+		else
+			EM.defer( self.railsify(( work || block )), self.railsify(callback) )
+		end
 	end
 
 	def Momentarily.next_tick(work = nil, &block)

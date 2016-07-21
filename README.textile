@@ -8,16 +8,23 @@ Momentarily is a wrapper around EventMachine with Rails considerations baked in.
 
 To use Momentarily, first add it to your Gemfile:
 
-gem 'momentarily'
+<pre><code>
+    gem 'momentarily'
+</code></pre>
 
 You'll then need to start the reactor. Create a *config/initializers/momentarily.rb* file like this:
 
-Momentarily.start
+<pre><code>
+    Momentarily.start
+</code></pre>
 
 That's it! Once complete, *Momentarily.reactor_running?* should be true. 
 
+Note that momentarily will not defer tasks if Rails.env.test? is true.
+
 Momentarily provides the very useful "later" command. Calling .later will spawn a thread to complete the tasks you provide, allowing your Rails requests to complete and return to users. For example:
 
+<pre><code>
 def my_rails_action
 	# do something that has to be done inline
 	Momentarily.later( Proc.new{
@@ -28,6 +35,7 @@ def my_rails_action
 	})
 	render
 end
+</code></pre>
 
 This will allow your request to complete without waiting for your activities to complete. Note that you are responsible for ensuring that your provided Proc is thread safe. 
 
@@ -40,6 +48,7 @@ Momentarily.later does the following:
 
 For consistency, Momentarily also provide interfaces *EventMachine.next_tick* and *EventMachine.defer* as *Momentarily.next_tick* and *Momentarily.defer*. Use next_tick to schedule non-blocking IO operations, like AMQP calls or Pusher notifications. *Momentarily.defer* operates similarly to *Momentarily.later*, except *Momentarily.later* checks out an ActiveRecord connection, manages timeouts and handles exceptions for better safety in a Rails environment.  We use AMQP also, so our momentarily.rb initializer looks like this:
 
+<pre><code>
 require 'amqp'
 
 Momentarily.start
@@ -47,6 +56,7 @@ Momentarily.start
 Momentarily.next_tick( Proc.new { 
 	AMQP.channel ||= AMQP::Channel.new(AMQP.connect(:host=> Q_SERVER, :user=> Q_USER, :pass => Q_PASS, :vhost => Q_VHOST )) 
 	} )
+</code></pre>
 
 Momentarily bridges the gap between using non-blocking IO for asynch operations (like EventMachine) and industrial strength queueing (like RabbitMQ and AMQP) to offload work for later execution. Both have their places, but it's not always feasible to use only non-blocking IO, and it's often not worth the trouble to create messages and a consumer just to shave 500ms off a web request. Our goal is to make it simple to defer even small tasks and ensure a snappy end user experience.
 
