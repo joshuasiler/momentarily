@@ -14,6 +14,7 @@ module Momentarily
 	mattr_accessor :timeout, :debug
 	@@timeout = 60
 	@@debug = false
+	@@inline = false
 
 	def Momentarily.start
 		# faciliates debugging
